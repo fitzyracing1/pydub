@@ -1,3 +1,14 @@
+# v0.25.2 (2026-10-07, fitzyracing-pydub fork)
+- Fix `ModuleNotFoundError: No module named 'pyaudioop'` on Python 3.13+ (upstream #725, #839, #863, #867):
+  depend on `audioop-lts` on Python 3.13+, make the `pyaudioop` fallback a relative import, and replace
+  the Python 2 `pyaudioop` module with the Python 3 rewrite from upstream PR #881 (byte-identical to the
+  C module for every function pydub uses, checked by new differential tests)
+- Publish the fixes merged on upstream `master` after 0.25.1, including the raw-string regexes that
+  silence `SyntaxWarning: invalid escape sequence` (#801), temp-file cleanup in `export()` (#665) and
+  the empty-ffprobe-output fix (#652)
+- Packaging: `pyproject.toml`, distribution name `fitzyracing-pydub` (import name unchanged), Python 3.9+
+- Tests: add `test/test_fork_fixes.py`; replace `assertEquals` (removed in Python 3.12) in the upstream suite
+
 # v0.25.1
 - Fix crashing bug in new scipy-powered EQ effects
 

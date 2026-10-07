@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Published as a separate distribution; the import name stays `pydub`.
+name = "fitzyracing-pydub"
+version = "0.25.2"
+description = "Manipulate audio with a simple and easy high level interface (maintained fork of pydub that works on Python 3.13+)"
+readme = { file = "README.markdown", content-type = "text/markdown" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "James Robert", email = "jiaaro@gmail.com" }]
+maintainers = [{ name = "Joshua Almeida", email = "fitzyracing1@gmail.com" }]
+keywords = ["audio", "sound", "high-level", "pydub", "fork"]
+requires-python = ">=3.9"
+dependencies = [
+    # audioop was removed from the standard library in Python 3.13 (PEP 594).
+    # audioop-lts is the same C module, packaged separately.
+    "audioop-lts; python_version>='3.13'",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Multimedia :: Sound/Audio :: Conversion",
+    "Topic :: Multimedia :: Sound/Audio :: Editors",
+    "Topic :: Multimedia :: Sound/Audio :: Mixers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/fitzyracing1/pydub"
+Source = "https://github.com/fitzyracing1/pydub"
+Issues = "https://github.com/fitzyracing1/pydub/issues"
+Changelog = "https://github.com/fitzyracing1/pydub/blob/master/CHANGELOG.md"
+Documentation = "https://github.com/fitzyracing1/pydub/blob/master/API.markdown"
+Upstream = "https://github.com/jiaaro/pydub"
+"360 Bench" = "https://github.com/fitzyracing1/360-bench"
+
+[tool.setuptools]
+packages = ["pydub"]

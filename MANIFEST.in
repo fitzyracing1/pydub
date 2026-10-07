@@ -1,1 +1,8 @@
 include LICENSE
+include README.markdown
+include CHANGELOG.md
+include API.markdown
+include AUTHORS
+# The test suite needs ~53 MB of audio fixtures, so it is kept out of the sdist.
+# Run it from a git checkout: python -m unittest test.test test.test_fork_fixes
+prune test

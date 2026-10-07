@@ -1,6 +1,131 @@
-# Pydub [![Build Status](https://travis-ci.org/jiaaro/pydub.svg?branch=master)](https://travis-ci.org/jiaaro/pydub) [![Build status](https://ci.appveyor.com/api/projects/status/gy1ucp9o5khq7fqi/branch/master?svg=true)](https://ci.appveyor.com/project/jiaaro/pydub/branch/master)
+# fitzyracing-pydub
+
+> Part of **[360 Bench](https://github.com/fitzyracing1/360-bench)**, tested fixes for abandoned PyPI packages.
 
 Pydub lets you do stuff to audio in a way that isn't stupid.
+
+[![PyPI](https://img.shields.io/pypi/v/fitzyracing-pydub.svg)](https://pypi.org/project/fitzyracing-pydub/)
+
+> **This is a fork of [pydub](https://github.com/jiaaro/pydub)
+> by [James Robert (jiaaro)](https://github.com/jiaaro)** and its contributors, published as a
+> drop-in replacement that works on Python 3.13 and newer. The upstream package has not been
+> released since 0.25.1 (March 2021); on Python 3.13+ `from pydub import AudioSegment`
+> crashes, and the pull requests that fix it have not been merged. The import name is still
+> `pydub`, so no code changes are needed. All credit for the original library goes to its
+> author and contributors; it remains available under the same MIT license.
+>
+> Upstream is not completely dormant (a typo fix was merged in March 2026), so if a fixed
+> `pydub` release appears on PyPI, prefer it and switch back.
+
+
+## What's fixed in this fork
+
+Based on upstream `master` at [`103e339`](https://github.com/jiaaro/pydub/commit/103e339d3bc7a9a58a9f1de65f7d8074659b5f5a)
+(0.25.1 plus the small fixes the maintainer merged after that release, which were never published).
+The API is unchanged.
+
+- **`from pydub import AudioSegment` works on Python 3.13 and 3.14.** Python 3.13 removed the
+  `audioop` module from the standard library, so pydub fell back to its bundled pure-Python
+  copy, but did so with `import pyaudioop`, an absolute import that can never find a module
+  living inside the `pydub` package. The result was
+  `ModuleNotFoundError: No module named 'pyaudioop'`. This fork:
+  - depends on [`audioop-lts`](https://pypi.org/project/audioop-lts/) (the same C module,
+    packaged separately) on Python 3.13+ only, via `audioop-lts; python_version>='3.13'`.
+    Nothing extra is installed on 3.12 and older, where `audioop` is still in the stdlib;
+  - fixes the fallback import (`from . import pyaudioop as audioop`);
+  - makes the fallback actually usable. `pydub/pyaudioop.py` was Python 2 code (`buffer()`,
+    `.next()`, float indexes) and failed on the first call. It is replaced by the Python 3
+    rewrite from unmerged upstream PR [#881](https://github.com/jiaaro/pydub/pull/881) by
+    [@iammcoding](https://github.com/iammcoding). The fork's tests check that it gives
+    byte-for-byte the same output as the C module for every `audioop` function pydub uses
+    (`add`, `avg`, `bias`, `lin2lin`, `max`, `mul`, `ratecv`, `reverse`, `rms`, `tomono`,
+    `tostereo`) at sample widths 1 to 4. It is only used if no C `audioop` can be imported,
+    and it is much slower (the full test suite takes about 9 minutes with it, against about
+    25 seconds with `audioop-lts`).
+
+  Upstream issues: [#725](https://github.com/jiaaro/pydub/issues/725),
+  [#839](https://github.com/jiaaro/pydub/issues/839),
+  [#863](https://github.com/jiaaro/pydub/issues/863),
+  [#867](https://github.com/jiaaro/pydub/issues/867);
+  unmerged PRs: [#881](https://github.com/jiaaro/pydub/pull/881),
+  [#883](https://github.com/jiaaro/pydub/pull/883).
+- **No more `SyntaxWarning: invalid escape sequence '\('`** on Python 3.12+ from the regexes in
+  `pydub/utils.py` (they are raw strings now). Upstream fixed this on `master` in
+  [`5658398`](https://github.com/jiaaro/pydub/commit/5658398) but never released it; the fork's
+  tests compile every module with warnings turned into errors so it can't come back.
+  Upstream issue: [#801](https://github.com/jiaaro/pydub/issues/801).
+- **Unreleased upstream fixes are now published**, because the fork is built from `master`:
+  temporary files are deleted when `export()` fails
+  ([#665](https://github.com/jiaaro/pydub/pull/665)), `mediainfo_json()` no longer crashes on
+  empty ffprobe output ([#652](https://github.com/jiaaro/pydub/pull/652)), file handles opened
+  passed in as `BufferedReader` objects are closed after reading ([#687](https://github.com/jiaaro/pydub/pull/687)), and `append()` with
+  a crossfade builds its result in memory instead of a temp file
+  ([#686](https://github.com/jiaaro/pydub/pull/686)).
+- **Packaging:** `pyproject.toml` replaces `setup.py`; Python 3.9+ (Python 2 and 3.8 are no longer
+  supported. If you are stuck on those, keep upstream `pydub==0.25.1`, which works there).
+  The upstream test suite's two `assertEquals` calls (removed in Python 3.12) were changed to
+  `assertEqual`.
+
+PR [#883](https://github.com/jiaaro/pydub/pull/883) (a much larger "revival" of pydub) was
+reviewed too. This fork deliberately takes only the Python 3.13 fix and leaves out #883's
+behaviour changes (new exceptions, ffmpeg piping, encoder fallbacks), so upgrading is low-risk.
+
+
+## Install
+
+```bash
+pip install fitzyracing-pydub
+```
+
+You still need ffmpeg or libav for anything other than WAV (see [Dependencies](#dependencies)).
+
+### Switching from `pydub`
+
+This distribution installs the same `pydub` import package as the original, so your code keeps
+doing `from pydub import AudioSegment`. **Uninstall the original first**, then install the fork:
+
+```bash
+pip uninstall -y pydub
+pip install fitzyracing-pydub
+```
+
+The order matters. Both distributions own the same files, so if you install the fork first and
+uninstall `pydub` afterwards, pip deletes the shared `pydub/` files and the import breaks. If
+that happens, run `pip install --force-reinstall --no-deps fitzyracing-pydub`.
+
+In `requirements.txt` / `pyproject.toml`, replace `pydub` with `fitzyracing-pydub`.
+
+### If you get pydub through another package
+
+pip has no equivalent of npm's `overrides`: it cannot replace a dependency with a differently
+named package. If one of your dependencies requires `pydub`, pip will keep installing the
+original. So you install the fork alongside it, and since both provide the same `pydub` import
+name you then have to remove the original:
+
+```bash
+pip install fitzyracing-pydub
+pip uninstall -y pydub
+pip install --force-reinstall --no-deps fitzyracing-pydub   # restore the files the uninstall removed
+```
+
+Afterwards `pip check` reports `<package> requires pydub, which is not installed`; that is
+expected. Any later `pip install`/`--upgrade` that pulls `pydub` back in will overwrite the fork's
+files, so repeat the steps above after upgrading the package that depends on it.
+
+**uv users** can do this properly with an override that drops the original:
+
+```toml
+# pyproject.toml
+[project]
+dependencies = ["fitzyracing-pydub", "...the package that depends on pydub..."]
+
+[tool.uv]
+override-dependencies = ["pydub; sys_platform == 'never'"]
+```
+
+(or `uv pip install --override overrides.txt ...` with that same line in `overrides.txt`).
+
+
 
 **Stuff you might be looking for**:
  - [Installing Pydub](https://github.com/jiaaro/pydub#installation)
@@ -155,6 +280,10 @@ automatically.
 
 ## Bugs & Questions
 
+Problems specific to this fork (installation, Python 3.13+): please use the
+[fork's issue tracker](https://github.com/fitzyracing1/pydub/issues).
+For everything else, the upstream project's notes below still apply.
+
 You can file bugs in our [github issues tracker](https://github.com/jiaaro/pydub/issues), 
 and ask any technical questions on 
 [Stack Overflow using the pydub tag](http://stackoverflow.com/questions/ask?tags=pydub). 
@@ -164,20 +293,9 @@ We keep an eye on both.
 
 Installing pydub is easy, but don't forget to install ffmpeg/avlib (the next section in this doc)
 
-    pip install pydub
+    pip install fitzyracing-pydub
 
-Or install the latest dev version from github (or replace `@master` with a [release version like `@v0.12.0`](https://github.com/jiaaro/pydub/releases))…
-
-    pip install git+https://github.com/jiaaro/pydub.git@master
-
--OR-
-
-    git clone https://github.com/jiaaro/pydub.git
-
--OR-
-
-Copy the pydub directory into your python path. Zip 
-[here](https://github.com/jiaaro/pydub/zipball/master)
+See [Switching from `pydub`](#switching-from-pydub) above if the original is already installed.
 
 ## Dependencies
 
@@ -234,7 +352,7 @@ Windows:
 
 1. Download and extract libav from [Windows binaries provided here](http://builds.libav.org/windows/).
 2. Add the libav `/bin` folder to your PATH envvar
-3. `pip install pydub`
+3. `pip install fitzyracing-pydub`
 
 ## Important Notes
 
@@ -308,7 +426,29 @@ with open("%s_minute_playlist.mp3" % playlist_length, 'wb') as out_f:
     playlist.export(out_f, format='mp3')
 ```
 
+## Security contact
+
+To report a security vulnerability in this fork, please use
+[GitHub private vulnerability reporting](https://github.com/fitzyracing1/pydub/security/advisories/new)
+rather than a public issue.
+
+## Credits
+
+pydub was created by [James Robert](https://github.com/jiaaro); see [AUTHORS](./AUTHORS) for the
+many contributors. The pure-Python `audioop` rewrite in this fork comes from
+[@iammcoding](https://github.com/iammcoding)'s upstream PR
+[#881](https://github.com/jiaaro/pydub/pull/881), and the packaging approach (an `audioop-lts`
+dependency with a Python-version marker) follows [@keithadler](https://github.com/keithadler)'s
+PR [#883](https://github.com/jiaaro/pydub/pull/883) and the community workaround in
+[#725](https://github.com/jiaaro/pydub/issues/725). Fork maintained by
+[Joshua Almeida](https://github.com/fitzyracing1).
+
 ## License ([MIT License](http://opensource.org/licenses/mit-license.php))
+
+[MIT](./LICENSE). The original license and copyright notice are retained unchanged; fork
+changes are released under the same license.
+
+Original project: https://github.com/jiaaro/pydub
 
 Copyright © 2011 James Robert, http://jiaaro.com
 
