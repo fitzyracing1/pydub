@@ -49,6 +49,7 @@ Changelog = "https://github.com/fitzyracing1/pydub/blob/master/CHANGELOG.md"
 Documentation = "https://github.com/fitzyracing1/pydub/blob/master/API.markdown"
 Upstream = "https://github.com/jiaaro/pydub"
 "360 Bench" = "https://github.com/fitzyracing1/360-bench"
+Funding = "https://github.com/sponsors/fitzyracing1"
 
 [tool.setuptools]
 packages = ["pydub"]
